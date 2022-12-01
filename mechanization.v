@@ -269,7 +269,8 @@ Definition eval_match_pattern (pat: path_pattern) (return_name: string) (g: grap
 
 
 Theorem eval_match_pattern_empty_sound: 
-  forall (pp: path_pattern) (return_name: string) (g: graph) (t: table), (length t = 0 /\ get_nodes g = nil /\ get_edges g = nil) -> length (eval_match_pattern pp return_name g t) = 0.
+  forall (pp: path_pattern) (return_name: string) (g: graph) (t: table), 
+  (length t = 0 /\ get_nodes g = nil /\ get_edges g = nil) -> length (eval_match_pattern pp return_name g t) = 0.
 Proof.
   intros.
   destruct g.
@@ -289,7 +290,10 @@ Qed.
 
 (* forall (nid: string) (lambda: l_map) (g: graph), get_lambda g = lambda ->  *)
 
-(* If a node with some labels is in the graph, then evaluating solely a node pattern with one of those labels returns a table that contains a record with the id of that node *)
+(* Assuming that we are matching on only labels:
+If a node with some labels is in the graph, 
+then evaluating solely a node pattern with one of those labels 
+returns a table that contains a record with the id of that node *)
 Theorem eval_match_pattern_node_patterns_complete:
   forall (nid: string) (name: string) (label: string) (vertices: nodes) (rels: edges) (src: r_map) (dest: r_map) (lambda: l_map) (kappa: k_map) (tau: r_map) (g: graph) (return_name: string),
   g = (vertices, rels, src, dest, lambda, kappa, tau) ->
@@ -299,14 +303,23 @@ Proof.
   destruct g.
   try repeat destruct p.
   simpl.
-  unfold append_table_nodes.
-  admit.
+  inversion H; subst.
+  simpl in H1.
+  destruct vertices.
+  - contradiction. 
+  - simpl. destruct (lookup_lambda label (lambda s)).
+    * simpl. eexists. split.
+      + left. eexists.
+      + simpl in H1. admit. 
+    * admit.
 Admitted.
 
-(* Definition set_k (m: k_map) (id: string) (pk: string) (v: string) : k_map := 
-  fun (id': string) => if (string_dec id id') 
-      then fun (pk': string) => if (string_dec pk' pk) then v else m id' pk'
-      else m id'.   *)
+(* Assuming that we are matching on only labels: 
+For all the records in the table, *)
+(* Theorem eval_match_pattern_node_patterns_complete_reverse: *)
+
+
+
 
 Definition prop_pair := (string * string) % type.
 
@@ -416,22 +429,19 @@ end.
 
 (* This is only a partial proof since we did some simplification here: we skipped the checking of labels, property keys and edges. *)
 Theorem delete_node_partial_complete:
-  forall (nid: string) (g: graph) (g': graph), In nid (get_nodes g) -> delete_node nid g = g' -> not (In nid (get_nodes g')).
+  forall (nid: string) (g: graph) (g': graph), (In nid (get_nodes g) /\ delete_node nid g = g') -> not (In nid (get_nodes g')).
 Proof.
   intros.
-  (* rewrite H0. *)
-  destruct g in H.
+  inversion H.
+  inversion H1.
+  destruct g.
   try repeat destruct p.
-  simpl in H.
-  destruct g' in H.
-  try repeat destruct p.
-  simpl in H.
   unfold delete_node.
-  destruct 
-  rewrite <- H.
-  simpl.
-  auto.
-  unfold delete_node in H.
+  destruct (r0 nid). destruct (r1 nid).
+  - simpl. destruct remove_node. 
+    * auto.
+    * admit.
+  - simpl in H0. simpl. destruct remove_node.   
 
 (* running a match on nodes with no labels produces 5 rows in the table *)
 Example eval_match_pattern_matches_all_nodes:
